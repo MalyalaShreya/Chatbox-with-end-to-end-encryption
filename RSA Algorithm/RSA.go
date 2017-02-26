@@ -1,64 +1,121 @@
+//RSA in go
+//Max prime  no. is 10000
+//a bit slow
+//We have to give an extra character at the end for termination
 package main
 
- import (
-   "crypto/rand"
-   "fmt"
-   "math/big"
- )
+import (
+  "fmt"
+  "math"
+  "math/rand"
+  "time"
+)
 
-var e [256]big.Int
-var d [256]big.Int
-var temp [256]big.Int
-var en [256]big.Int
-var m [256]big.Int
+const N = 10000
+var Maxprimenumbers int
+var e []int
+var d []int
+var temp []int
+var en []int
+var m []int
+var is_prime [N]bool
+var primes []int
 
-func randomnumber() *big.Int {
-   var p *big.Int
-   var bits int
-   var err error
+// Only primes less than or equal to N will be generated
 
-   bits = 99
+func random(min, max int) int {
+    rand.Seed(time.Now().UnixNano())
+    return rand.Intn(max - min) + min
+}
 
-   p, err = rand.Prime(rand.Reader, bits)
+func primenumbergeneration() {
 
-   if err != nil {
-      fmt.Println(err)
-   }
+  var x, y, n int
+    nsqrt := math.Sqrt(N)
 
-   fmt.Printf("%d\n", p)
-   return p
+    
+
+    for x = 1; float64(x) <= nsqrt; x++ {
+        for y = 1; float64(y) <= nsqrt; y++ {
+            n = 4*(x*x) + y*y
+            if n <= N && (n%12 == 1 || n%12 == 5) {
+                is_prime[n] = !is_prime[n]
+            }
+            n = 3*(x*x) + y*y
+            if n <= N && n%12 == 7 {
+                is_prime[n] = !is_prime[n]
+            }
+            n = 3*(x*x) - y*y
+            if x > y && n <= N && n%12 == 11 {
+                is_prime[n] = !is_prime[n]
+            }
+        }
+    }
+
+    for n = 5; float64(n) <= nsqrt; n++ {
+        if is_prime[n] {
+            for y = n * n; y < N; y += n * n {
+                is_prime[y] = false
+            }
+        }
+    }
+
+    is_prime[2] = true
+    is_prime[3] = true
+
+    for x = 0; x < len(is_prime)-1; x++ {
+        if is_prime[x] {
+            primes = append(primes, x)
+        }
+    }
+
+  Maxprimenumbers=len(primes)
+    
+
+}
+
+func randomprimenumber() int {
+
+  myrand := random(0,Maxprimenumbers)
+  return primes[myrand]
+
 }
 
 
-func ce(t,p,q *big.Int) {
-   //var k,i *big.Int;
-   //k=;
-   k := big.NewInt(0)
-   //var i *big.Int
-   for i:=big.NewInt(2);i<t;i++ {
+func ce(t int,p int,q int) {
+   var k,i int;
+   k = 0
+   for i=2;i<t;i++ {
       if t%i==0 {
          continue;
       }
-
-      flag := i.ProbablyPrime(4)
-      //flag=prime(i);
+      var flag bool
+      flag = is_prime[i]
       if (flag==true)&&(i!=p)&&(i!=q) {
         e[k]=i;
-        var f big.Int
-        f=cd(e[k]);
+        //e=append(e,i)
+        var f int
+        f=cd(e[k],t)
+        if f>0 {
+          flag=true
+        } else {
+          flag=false
+        }
         if f>0 {
           d[k]=f;
+          fmt.Print("d[",i,"]: ",d[k])
           k++;
         }
-        if k==255 {
+        if k==len(m) {
+          fmt.Print("length of message: ",k)
          break;
         }
       }
    }
 }
 
-func cd(x *big.Int) *big.Int {
-   var k big.Int
+func cd(x int,t int) int {
+   var k int
    k=1
    for {
       k=k+t;
@@ -68,14 +125,14 @@ func cd(x *big.Int) *big.Int {
    }
 }
 
-func encrypt() {
-   var i,length,pt,k,key,ct *big.Int
+func encrypt(n int) {
+   var i,length,pt,k,key,ct int
    i=0
    key=e[0]
-   length=len(m1)
+   length=len(m)
    for (i!=length) {
 
-      pt=m1[i]
+      pt=m[i]
       pt=pt-96
       k=1;
       for j:=0;j<key;j++ {
@@ -88,24 +145,33 @@ func encrypt() {
       i++
    }
    en[i]=-1
+   fmt.Printf("e[%d]: -1",i)
    fmt.Printf("\nTHE ENCRYPTED MESSAGE IS\n")
    for i:=0;en[i]!=-1;i++ {
       fmt.Printf("%c",en[i])
    }
+   fmt.Printf("Encrq")
 }
 
 
-func decrypt() {
-   var pt,ct,key,k *big.Int
+func decrypt(n int) {
+  fmt.Printf("Hi\n")
+   var pt,ct,key,k,i int
    i=0
    key=d[0]
-   for en[i]!=-1 {
+   fmt.Println("d[0]: ",d[0])
+   for i<len(m)-1 {
+    fmt.Printf("inside for\n")
+
+      fmt.Printf("i= %d\n",i)
       ct=temp[i]
       k=1
+      fmt.Print(key)
       for j:=0;j<key;j++ {
         k=k*ct
         k=k%n
       }
+
       pt=k+96
       m[i]=pt
       i++
@@ -122,28 +188,37 @@ func decrypt() {
 
  func main() {
 
-   var p,q,n,t big.Int 
-   //var arr []big.Int
+  var p,q,n,t int
+  primenumbergeneration() 
      
+  p=randomprimenumber()
+  q=randomprimenumber()
+  fmt.Println("p: ",p)
+  fmt.Println("q: ",q)
+  for p==q {
+    q=randomprimenumber()
+  }
 
-   p=randomnumber()
-   q=randomnumber()
+  n=p*q
+  t=(p-1)*(q-1)
+  fmt.Println("t: ",t)
+  fmt.Println("n: ",n)
 
-   // if(p==q){
-   //    q=randomnumber()
-
-   // }
-   n=pq
-   t=(p-1)(q-1)
 
    var m1 string
    fmt.Printf("Enter message: ")
    fmt.Scanf("%s",&m1)
    for i:=0;i<len(m1);i++ {
-      m[i]=m1[i]
+      m=append(m,int(m1[i]))
+      e=append(e,0)
+      d=append(d,0)
+      en=append(en,0)
+      temp=append(temp,0)
    }
+  en=append(en,0)
+  temp=append(temp,0)
    ce(t,p,q)
-   encrypt()
-   decrypt()
+   encrypt(n)
+   decrypt(n)
 
  }
