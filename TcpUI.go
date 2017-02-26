@@ -53,15 +53,29 @@ func server(self string,self_port string) {
         //fmt.Println("Type :q! to Quit")
         for {
           // will listen for message to process ending in newline (\n)
-          message, _ := bufio.NewReader(conn).ReadString('\n')
-          // output message received
-          fmt.Print("Message Received from client:", string(message))
-          // sample process for string received
-          //newmessage := strings.ToUpper(message)
-
+          scanner := bufio.NewScanner(bufio.NewReader(conn))
+          i:=0
+          for scanner.Scan(){
+             if scanner.Text()==""{
+               break;
+              }
+          if i==0{
+            fmt.Println("message received from client")
+              i+=1
+             }
+            fmt.Println(scanner.Text())
+            }
+  
           reader := bufio.NewReader(os.Stdin)
-          fmt.Print("Text to send to client: ")
+          text:=""
+          send:=1
+          for send==1{
+         fmt.Print("Text to send to client: ")
           newmessage, _ := reader.ReadString('\n')
+          text=text+newmessage
+         fmt.Print("Do you want to send?//if yes enter 1//if no enter 0??")
+         fmt.Scanf("%d",&send)
+    }
           // send new string back to client
           conn.Write([]byte(newmessage + "\n"))
         } 
@@ -92,17 +106,36 @@ func client() {
 	conn, _ := net.Dial("tcp", friendIP+":"+friendport)
   for {
       
+      var send int
+      var text1 string
+    text1=""
+    send=1
+    for send==1 {
       reader := bufio.NewReader(os.Stdin)
       fmt.Print("Text to send to server: ")
       text, _ := reader.ReadString('\n')
-      fmt.Println(text)
+      text1=text1+text
+      // send to socket
+      fmt.Print("Do you want to send?")
+      fmt.Scanf("%d",&send)
+    }
       fmt.Fprintf(conn, text + "\n")
       //Timer thread
       //Ask to cancel request or wait
 
       // listen for reply
-      message, _ := bufio.NewReader(conn).ReadString('\n')
-      fmt.Print("Hello: "+message)
+      scanner := bufio.NewScanner(bufio.NewReader(conn))
+     i:=0
+    for scanner.Scan(){
+     if scanner.Text()==""{
+     break;
+        }
+    if i==0{
+     fmt.Println("message received from server")
+     i+=1
+       }
+    fmt.Println(scanner.Text())
+   }
       timer := time.NewTimer(time.Second * 1)
 
     if message=="" {
