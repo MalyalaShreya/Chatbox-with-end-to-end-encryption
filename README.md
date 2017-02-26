@@ -1,1 +1,1 @@
-# POPL-Project
+# Chatbox with end-to-end encryption
