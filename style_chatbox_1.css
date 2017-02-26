@@ -1,0 +1,76 @@
+.container_12
+{
+	background-color:green;
+}
+
+.container_12 h2{
+	text-align:center;
+	font-size:30px;
+	background-color:yellow;
+	margin-bottom:10px;
+	font-family:sans-serif;
+}
+	
+.grid_3{
+	margin-left:20px;
+}
+
+form li{
+	list-style: none;
+	margin-bottom:20px;
+}
+form ul{
+	padding-left:10px;
+	background-color:red;
+
+}
+label{
+	display : inline;
+}
+/*
+.shown_message textarea {
+	width:460px;
+	height:450px;
+}
+
+.send_message textarea {
+	margin:10 0 0 0;
+	width:460px;
+	height:100px;
+}
+*/
+
+.chat_container{
+	width:460px;
+	height:530px;
+	border:2px solid #ddd;
+}
+
+.chat_container > .chat_messages{
+	height:470px;
+	border-bottom: 1px solid #ddd;
+	overflow-y:scroll;
+}
+
+.chat_container > .chat_bottom form input[type="text"]{
+	width:85%;
+	padding:3px;
+	padding-left:10px;
+	border:1px solid #ddd;
+	border-radius:5px;
+	margin:5px;
+	height:50px;
+}
+/*
+.side_bar textarea {
+	width:250px;
+	background-color:blue;
+	height:50px;
+}
+
+.people textarea {
+	width:250px;
+	background-color:blue;
+	height:350px;
+}
+*/

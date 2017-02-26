@@ -1,0 +1,91 @@
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>chatbox</title>
+		<link rel="stylesheet" href="style_chatbox_1.css" />
+		<link rel="stylesheet" href="website/css/text.css" />
+		<link rel="stylesheet" href="website/css/960_12_col.css" />
+		<link rel="stylesheet" href="website/css/reset.css" />
+		
+		
+	</head>
+	
+	
+	
+	<body>
+
+		<div class="container_12">
+			<h2>CHATBOX</h2>
+				<div class="grid_3">
+					<form action="#" method="post">
+						<ul>
+							<li>
+								<label for="set1">set_1 :  </label>
+								<input id="set1" name="name" />
+							</li>
+							<li>
+								<label for="ip_address1">ip_address_1 :  </label>
+								<input id="ip_address1" name="name" />
+							</li>
+							<li>
+								<label for="port1">port_1 :  </label>
+								<input id="port1" name="name" />
+							</li>
+							<li>
+								<label for="set2">set_2 :</label>
+								<input id="set1" name="name" />
+							</li>
+							<li>
+								<label for="ip_address_2">ip_address_2 :  </label>
+								<input id="ip_address_2" name="name" />
+							</li>
+							<li>
+								<label for="port_2">port_2 :  </label>
+								<input id="port_2" name="name" />
+							</li>
+
+							<li><input type="submit" value="Add friend"/></li>
+						</ul>
+					</form>	
+				</div>
+				<div class="grid_6">
+					<div class="chat_container">
+						<div class="chat_messages"></div>
+						<!--	<div class="shown_message">
+								<textarea id="message" name="message"></textarea>
+							</div>
+							<div class="send_message">
+							<textarea id="comments"  name="comments" placeholder="type ur message here...."></textarea>
+							</div>
+							
+							<li><input type="submit" value="Send"/></li>
+						-->
+						<div class="chat_bottom">
+							<form action="#" onsubmit="return false;" id="chatform">
+							
+								<input type="hidden" id="name" value="<?php echo $user; ?>" />
+								<input type="text" name="text" id="text" value="" placeholder="type your message here...." />
+								<input type="submit" name="submit" value="send" />
+							</form>
+						</div>	
+					</div>
+				</div>	
+					
+				<label for="search_friend">Search friend :</label>
+				
+				<div class="grid_3">
+					<div class="side_bar">
+						<textarea id="side_bar" name="side_bar"></textarea>
+					</div>
+				</div>
+				<li><input type="submit" value="Search"/></li>
+				<label for="people_you_know">People_you_know :</label>
+				<div class="grid_3" "people">
+					<div class="people">
+						<textarea id="side_bar" name="side_bar"></textarea>
+					</div>
+				</div>		
+		
+		</div>
+	</body>
+</html>
