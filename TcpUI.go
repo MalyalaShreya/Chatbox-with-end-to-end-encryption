@@ -5,85 +5,277 @@ import "fmt"
 import "bufio"
 import "os"
 import "sync"
-import "time"
-// import "strings"
-// import "html/template"
-// import "net/http"
-var globalMap = make(map[string]bool)
 
+var allClients map[*Client]int
+var allServers map[*Server]int
+
+type Client struct {
+    incoming chan string
+    ipandport    string
+    outgoing   chan string
+    // reader     *bufio.Reader
+    // writer     *bufio.Writer
+    conn       net.Conn
+    connection *Client
+}
+
+type Server struct {
+    incoming chan string
+    outgoing chan string
+    ipandport  string
+    name       string
+    // reader     *bufio.Reader
+    // writer     *bufio.Writer
+    conn       net.Conn
+    connection *Server
+
+}
+
+
+
+func (client *Client) Read() {
+    for {
+        reader := bufio.NewReader(os.Stdin)
+        line, err := reader.ReadString('\n')
+        fmt.Println("Text to client: ",line)
+        if line==":q" {
+          client.conn.Close()
+          fmt.Println("Closed")
+          break
+        } else if line==":delete" {
+          client.conn.Close()
+          delete(allClients, client)
+          if client.connection != nil {
+            client.connection = nil
+
+          }
+          client = nil
+          fmt.Println("Deleted")
+
+
+        } else if err == nil {
+            // if client.connection != nil {
+            //     client.connection.outgoing <- line
+            // send new string back to client
+            client.conn.Write([]byte(line + "\n"))
+            
+        } else {
+            break
+        }
+
+    }
+
+    client.conn.Close()
+    delete(allClients, client)
+    if client.connection != nil {
+        client.connection = nil
+    }
+    client = nil
+}
+
+func (server *Server) Read() {
+    for {
+        
+        reader := bufio.NewReader(os.Stdin)
+        line, err := reader.ReadString('\n')
+        fmt.Println("Text to server: ",line)
+        if line==":q" {
+          server.conn.Close()
+          fmt.Println("Closed")
+
+          break
+        } else if line==":delete" {
+          server.conn.Close()
+          delete(allServers, server)
+          if server.connection != nil {
+            server.connection = nil
+
+          }
+          server = nil
+          fmt.Println("Deleted")
+
+
+        } else if err == nil {
+            // if server.connection != nil {
+            //     server.connection.outgoing <- line
+            // send new string back to client
+            server.conn.Write([]byte(line + "\n"))
+            
+        } else {
+            break
+        }
+
+    }
+
+    server.conn.Close()
+    delete(allServers, server)
+    if server.connection != nil {
+        server.connection = nil
+    }
+    server = nil
+}
+
+func (client *Client) Write() {
+    // for data := range client.incoming {
+    //     fmt.Println("Text from client: ",data)
+
+    //     if data==":q" {
+    //       client.conn.Close()
+    //       fmt.Println("Closed")
+
+    //       break
+    //     }
+    //     if data==":delete" {
+    //       client.conn.Close()
+    //       delete(allClients, client)
+    //       if client.connection != nil {
+    //         client.connection.connection = nil
+
+    //       }
+    //       client = nil
+    //       fmt.Println("Deleted")
+
+
+    //     }
+    //     client.conn.Write([]byte(data + "\n"))
+    //     //client.writer.Flush()
+    // }
+  for {
+    message, _ := bufio.NewReader(client.conn).ReadString('\n')
+            // output message received
+    fmt.Print("Message Received from server:", string(message))
+  }
+}
+func (server *Server) Write() {
+    // for data := range server.incoming {
+    //     fmt.Println("Text from server: ",data)
+
+    //     if data==":q" {
+    //       server.conn.Close()
+    //       fmt.Println("Closed")
+    //       break
+    //     }
+    //     if data==":delete" {
+    //       server.conn.Close()
+    //       delete(allServers, server)
+    //       if server.connection != nil {
+    //         server.connection.connection = nil
+    //       }
+    //       server = nil
+    //       fmt.Println("Deleted")
+
+    //     }
+    //     server.conn.Write([]byte(data + "\n"))
+    //     //server.writer.Flush()
+    // }
+  for {
+
+    message1, _ := bufio.NewReader(server.conn).ReadString('\n')
+            // output message received
+    fmt.Print("Message Received from client:", string(message1))
+  }
+
+}
+
+func (client *Client) Listen() {
+    go client.Read()
+    go client.Write()
+}
+
+func (server *Server) Listen() {
+    go server.Read()
+    go server.Write()
+}
 func f(self string,self_port string) {
 
 	var wg sync.WaitGroup
-	wg.Add(1)
+	wg.Add(2)
 	go server(self,self_port)
-	go AddFriend()
+	go client()
 
 	wg.Wait();
 }
 
 func AddFriend() {
-
   client()
 }
+func NewClient(connection net.Conn) *Client {
+    // writer := bufio.NewWriter(connection)
+    // reader := bufio.NewReader(connection)
+
+    client := &Client{
+        incoming: make(chan string),
+        outgoing: make(chan string),
+        conn:     connection,
+        // reader:   reader,
+        // writer:   writer,
+    }
+    client.Listen()
+
+    return client
+}
+
+func NewServer(connection net.Conn) *Server {
+    //fmt.Println("Newserver")
+    // writer := bufio.NewWriter(connection)
+    // reader := bufio.NewReader(connection)
+
+    server := &Server{
+        incoming: make(chan string),
+        outgoing: make(chan string),
+        conn:     connection,
+        // reader:   reader,
+        // writer:   writer,
+    }
+    server.Listen()
+
+    return server
+}
+
+
 
 func server(self string,self_port string) {
 
-    //s := make([]string, 0)
-  //m := make(map[string]bool)
-  	ln, _ := net.Listen("tcp", ":"+self_port)
-     
-    var i bool
-    var user int
-    user=0
-    i=false
-  	conn, _ := ln.Accept()
-    i=true
-    if i==true {
-    var j int
-    j=0
-    fmt.Print("You got a friend request!\nDo you want to accept it?(Yes=1, No=0 )\n")
-    fmt.Scanf("%d",&j) 
-    if j==1 {
-        user=user+1
-        globalMap[conn.RemoteAddr().String()]=true
-        
-        // run loop forever (or until ctrl-c)
-        var b bool
-        //b=true
-        //fmt.Println("Type :q! to Quit")
-        for {
-          // will listen for message to process ending in newline (\n)
-          scanner := bufio.NewScanner(bufio.NewReader(conn))
-          i:=0
-          for scanner.Scan(){
-             if scanner.Text()==""{
-               break;
-              }
-          if i==0{
-            fmt.Println("message received from client")
-              i+=1
-             }
-            fmt.Println(scanner.Text())
-            }
-  
-          reader := bufio.NewReader(os.Stdin)
-          text:=""
-          send:=1
-          for send==1{
-         fmt.Print("Text to send to client: ")
-          newmessage, _ := reader.ReadString('\n')
-          text=text+newmessage
-         fmt.Print("Do you want to send?//if yes enter 1//if no enter 0??")
-         fmt.Scanf("%d",&send)
-    }
-          // send new string back to client
-          conn.Write([]byte(newmessage + "\n"))
-        } 
-      } else {
-            fmt.Print("Sorry for bad experience :(\n")
-      }
+  	listener, _ := net.Listen("tcp", ":"+self_port)
 
+    for {
+        conn, err := listener.Accept()
+        if err != nil {
+            fmt.Println(err.Error())
+        }
+        client := NewClient(conn)
+        fmt.Println("You got a friend request!\nDo you want to accept it?\n(yes/no)")
+        var answer string
+        fmt.Scanf("%s",&answer)
+        if answer=="yes" {
+          allClients[client] = 1
+          client.ipandport=conn.RemoteAddr().String()
+          fmt.Println("length: ",len(allClients))
+
+          for clientList, _ := range allClients {
+              if clientList.connection == nil {
+                  client.connection = clientList
+                  clientList.connection = client
+                  fmt.Println("Connected")
+              }
+
+              fmt.Println("inside for")
+          }
+          fmt.Println("length: ",len(allClients))
+        } else {
+          fmt.Println("length: ",len(allClients))
+          //delete(allClients,client)
+          client.conn.Close()
+          delete(allClients, client)
+          if client.connection != nil {
+              client.connection.connection = nil
+          }
+          client = nil
+          fmt.Print("Sorry for bad experience :(\n")
+        }
+        
     }
+    
     fmt.Print("Back to server\n")
   
 
@@ -102,81 +294,53 @@ func client() {
 	fmt.Scanf("%s",&friendport)
   mutex.Unlock()
 
-  fmt.Println("Type ")
+
 	conn, _ := net.Dial("tcp", friendIP+":"+friendport)
-  for {
-      
-      var send int
-      var text1 string
-    text1=""
-    send=1
-    for send==1 {
-      reader := bufio.NewReader(os.Stdin)
-      fmt.Print("Text to send to server: ")
-      text, _ := reader.ReadString('\n')
-      text1=text1+text
-      // send to socket
-      fmt.Print("Do you want to send?")
-      fmt.Scanf("%d",&send)
-    }
-      fmt.Fprintf(conn, text + "\n")
-      //Timer thread
-      //Ask to cancel request or wait
-
-      // listen for reply
-      scanner := bufio.NewScanner(bufio.NewReader(conn))
-     i:=0
-    for scanner.Scan(){
-     if scanner.Text()==""{
-     break;
-        }
-    if i==0{
-     fmt.Println("message received from server")
-     i+=1
-       }
-    fmt.Println(scanner.Text())
-   }
-      timer := time.NewTimer(time.Second * 1)
-
-    if message=="" {
-      fmt.Println("Request not accepted\n")
-      conn.Close()
-      break
-    } else {
-        fmt.Print("Message from server: "+message)
-
-    }
-
+  server := NewServer(conn)
+  server.name=friend
+  server.ipandport=friendIP+":"+friendport
+  allServers[server] = 1
+  for serverList, _ := range allServers {
+    if serverList.connection == nil {
+      server.connection = serverList 
+      serverList.connection = server
+      }
   }
 }
 
 func main() {
 
+  fmt.Print("      ---------------------------------------      \nBasic commands\n1. To quit the chat with a friend type :q\n2. To delete a friend type :delete\n      ---------------------------------------      \n ")
 	var self,self_port string
+  allClients = make(map[*Client]int)
+  allServers = make(map[*Server]int)
+
 	fmt.Print("Welcome to your chatbox!\nEnter your name: ")
 	fmt.Scanf("%s",&self)
 	fmt.Print("Enter your port: ")
 	fmt.Scanf("%s",&self_port)
-  var boolean bool
-	boolean=true
+  //var boolean bool
+	//boolean=true
+  // client()
+
   f(self,self_port)
 
-  for boolean==true {
+  // for boolean==true {
 
-    fmt.Print("Options:\n1. Add friend\n2. Quit")
-    var i int 
-    fmt.Scanf("%d",&i)
-    switch i {
+  //   fmt.Print("Options:\n1. Add friend\n2. Quit")
+  //   var i int 
+  //   fmt.Scanf("%d",&i)
+  //   switch i {
    
-      case 1:
-        AddFriend()
-      case 2:
-        break
+  //     case 1:
+  //       AddFriend()
+  //     case 2:
+  //       break
 
-    }    
-  }
+  //   }    
+  // }
 	  
-	fmt.Print("Bye!\nSee you soon :)");
+	fmt.Print("Bye!\nSee you soon :)\n");
   
 }
 
