@@ -8,7 +8,6 @@ import "sync"
 import "crypto/rand"
 import "crypto/rsa"
 import "crypto/sha256"
-// import "crypto/x509" 
 import "github.com/trustmaster/go-aspell"
 import "strings"
 import "time"
@@ -56,7 +55,6 @@ func Options() {
   wg.Add(1)
   //go Listen()
   go AddFriend()
-  // go GroupChat()
   wg.Wait()
 
 }
@@ -88,66 +86,18 @@ func Listen() {
 
 func handleConn(conn net.Conn) {
 
-  // conn.Write([]byte(Self.name + "\n"))
-  // name, _ := bufio.NewReader(conn).ReadString('\n')
-  // fmt.Print("Message Received:", string(name))
-
-  // conn.Write([]byte(Self.IP + "\n"))
-  // ip, _ := bufio.NewReader(conn).ReadString('\n')
-  // fmt.Print("Message Received:", string(ip))
-
-  // conn.Write([]byte(Self.port + "\n"))
-  // port, _ := bufio.NewReader(conn).ReadString('\n')
-  // fmt.Print("Message Received:", string(port))
-
-  // Pub := Self.publicKey
-  // bytes, err := x509.MarshalPKIXPublicKey(Pub)
-  // if err != nil {
-  //   fmt.Println(err)
-  //   os.Exit(1)
-  // }
-  // fmt.Println("my key ",bytes)
-  // //str := string(bytes)
-
-  // var mutex = &sync.Mutex{}
-  // mutex.Lock()
-  // conn.Write(bytes)
-  // mutex.Unlock()
-
-  // buff:=make([]byte,0)
-  // tmp:=make([]byte,2048)
-  //    n,_:=conn.Read(tmp)
-     
-  //    buff=append(buff, tmp[:n]...)
-
-  // //public, _ := bufio.NewReader(conn).ReadString('\n')
-  // //fmt.Print("key Received:", buff)
-  //  str,err:=x509.ParsePKIXPublicKey(buff)
-  // fmt.Println("key received ",str)
-  // Friend := peer{name,ip,port,conn,string(buff)}
-  // AllFriends[name]=Friend
-  // MyFriends[name]=Friend
-
-
   ch:=make(chan string)
-  // var wg sync.WaitGroup
-  // wg.Add(2)
+
   go func() {
     encode(conn)
-    //wg.Done()
   }()
   go func (){
     ch<-decode(conn) 
-    //wg.Done()
   }()
   
-  //wg.Wait()
   var name string
   name=<-ch
   close(ch)
-
-   //name:= decode(conn)
-
   fmt.Println("Done")
 
   chat(name)
@@ -173,7 +123,6 @@ func decode(conn net.Conn) (string) {
   AllFriends[person.name]=peer{person.name,person.IP,person.port,conn,person.publicKey}
   MyFriends[person.name]=AllFriends[person.name]
   fmt.Println("Decoder2")
-  // chat(person.name)
   return person.name
 
 }
@@ -244,16 +193,6 @@ func encrypt(name string,msg string) (string){
   message := []byte(msg)
   label := []byte("")
   hash := sha256.New()
-  // key:=[]byte(AllFriends[name].publicKey)
-  // frPublicKey,err:= x509.ParsePKIXPublicKey(key)
-  // Public:=frPublicKey.(*rsa.PublicKey)
-
-  // if err != nil {
-  //   fmt.Println(err)
-  //   os.Exit(1)
-  // }
-
-
   ciphertext, err := rsa.EncryptOAEP(hash, rand.Reader, AllFriends[name].publicKey, message, label)
 
   if err != nil {
@@ -264,10 +203,7 @@ func encrypt(name string,msg string) (string){
   fmt.Printf(" encrypted [%s] to \n[%x]\n", string(message), ciphertext)
   fmt.Println()
 
-
   return string(ciphertext)
-
-
 }
 
 func decrypt(msg []byte) (string){
