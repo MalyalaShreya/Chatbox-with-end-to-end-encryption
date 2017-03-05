@@ -8,8 +8,12 @@ import "sync"
 import "crypto/rand"
 import "crypto/rsa"
 import "crypto/sha256"
-import "crypto/x509" 
-// import "bytes"
+// import "crypto/x509" 
+import "github.com/trustmaster/go-aspell"
+import "strings"
+import "time"
+import "encoding/gob"
+
 
 type peer struct {
 
@@ -17,7 +21,17 @@ type peer struct {
   IP string
   port string
   connection net.Conn
-  publicKey string
+  publicKey *rsa.PublicKey
+
+}
+
+
+type recieve struct {
+
+  name string
+  IP string
+  port string
+  publicKey *rsa.PublicKey
 
 }
 
@@ -40,7 +54,7 @@ func Options() {
 
   var wg sync.WaitGroup
   wg.Add(1)
-  go Listen()
+  //go Listen()
   go AddFriend()
   // go GroupChat()
   wg.Wait()
@@ -74,38 +88,96 @@ func Listen() {
 
 func handleConn(conn net.Conn) {
 
-  conn.Write([]byte(Self.name + "\n"))
-  name, _ := bufio.NewReader(conn).ReadString('\n')
-  fmt.Print("Message Received:", string(name))
+  // conn.Write([]byte(Self.name + "\n"))
+  // name, _ := bufio.NewReader(conn).ReadString('\n')
+  // fmt.Print("Message Received:", string(name))
 
-  conn.Write([]byte(Self.IP + "\n"))
-  ip, _ := bufio.NewReader(conn).ReadString('\n')
-  fmt.Print("Message Received:", string(ip))
+  // conn.Write([]byte(Self.IP + "\n"))
+  // ip, _ := bufio.NewReader(conn).ReadString('\n')
+  // fmt.Print("Message Received:", string(ip))
 
-  conn.Write([]byte(Self.port + "\n"))
-  port, _ := bufio.NewReader(conn).ReadString('\n')
-  fmt.Print("Message Received:", string(port))
+  // conn.Write([]byte(Self.port + "\n"))
+  // port, _ := bufio.NewReader(conn).ReadString('\n')
+  // fmt.Print("Message Received:", string(port))
 
-  Pub := Self.publicKey
-  bytes, err := x509.MarshalPKIXPublicKey(Pub)
-  if err != nil {
-    fmt.Println(err)
-    os.Exit(1)
-  }
+  // Pub := Self.publicKey
+  // bytes, err := x509.MarshalPKIXPublicKey(Pub)
+  // if err != nil {
+  //   fmt.Println(err)
+  //   os.Exit(1)
+  // }
+  // fmt.Println("my key ",bytes)
+  // //str := string(bytes)
 
-  str := string(bytes)
+  // var mutex = &sync.Mutex{}
+  // mutex.Lock()
+  // conn.Write(bytes)
+  // mutex.Unlock()
 
-  conn.Write([]byte(str + "\n"))
-  public, _ := bufio.NewReader(conn).ReadString('\n')
-  fmt.Print("Message Received:", string(public))
+  // buff:=make([]byte,0)
+  // tmp:=make([]byte,2048)
+  //    n,_:=conn.Read(tmp)
+     
+  //    buff=append(buff, tmp[:n]...)
+
+  // //public, _ := bufio.NewReader(conn).ReadString('\n')
+  // //fmt.Print("key Received:", buff)
+  //  str,err:=x509.ParsePKIXPublicKey(buff)
+  // fmt.Println("key received ",str)
+  // Friend := peer{name,ip,port,conn,string(buff)}
+  // AllFriends[name]=Friend
+  // MyFriends[name]=Friend
+
+
+  ch:=make(chan string)
+  // var wg sync.WaitGroup
+  // wg.Add(2)
+  go func() {
+    encode(conn)
+    //wg.Done()
+  }()
+  go func (){
+    ch<-decode(conn) 
+    //wg.Done()
+  }()
   
-  Friend := peer{name,ip,port,conn,public}
-  AllFriends[name]=Friend
-  MyFriends[name]=Friend
+  //wg.Wait()
+  var name string
+  name=<-ch
+  close(ch)
+
+   //name:= decode(conn)
+
+  fmt.Println("Done")
 
   chat(name)
 
 }
+
+
+func encode(conn net.Conn) {
+
+  fmt.Println("Encoder")
+  str := recieve{Self.name,Self.IP,Self.port,Self.publicKey}
+  encoder := gob.NewEncoder(conn)
+  encoder.Encode(str)
+  fmt.Println("Encoder2")
+
+}
+
+func decode(conn net.Conn) (string) {
+  fmt.Println("Decoder1")
+  var person recieve
+  decoder := gob.NewDecoder(conn)
+  decoder.Decode(&person)
+  AllFriends[person.name]=peer{person.name,person.IP,person.port,conn,person.publicKey}
+  MyFriends[person.name]=AllFriends[person.name]
+  fmt.Println("Decoder2")
+  // chat(person.name)
+  return person.name
+
+}
+
 
 func chat(name string) {
 
@@ -120,13 +192,14 @@ func chat(name string) {
 
 
 func Read(name string) {
-
   for {
     message, _ := bufio.NewReader(AllFriends[name].connection).ReadString('\n')
     msg:=decrypt([]byte(message))
+    fmt.Println("Message recieved at: ",time.Now().Format(time.RFC850))
     fmt.Print("Message Received: ", msg)
   }
   
+
 
 }
 
@@ -137,10 +210,32 @@ func Write(name string) {
     reader := bufio.NewReader(os.Stdin)
     fmt.Print("Text to send: ")
     newmessage, _ := reader.ReadString('\n')
+
+    words := strings.Fields(newmessage)
+
+    speller, err := aspell.NewSpeller(map[string]string{
+        "lang": "en_US",
+    })
+    if err != nil {
+        fmt.Errorf("Error: %s", err.Error())
+        return
+    }
+
+    for _,v := range words {
+
+        if speller.Check(v) {
+            //fmt.Print("OK\n")
+        } else {
+            fmt.Print(v)
+            fmt.Printf("(suggestions): %s\n", strings.Join(speller.Suggest(v), ", "))
+        }
+
+    }
+
     message:=encrypt(name,newmessage)
+    fmt.Println("Msg sent at: ",time.Now().Format(time.RFC850))
     AllFriends[name].connection.Write([]byte(message + "\n"))
   }
-  
 
 }
 
@@ -149,17 +244,17 @@ func encrypt(name string,msg string) (string){
   message := []byte(msg)
   label := []byte("")
   hash := sha256.New()
-  key:=[]byte(AllFriends[name].publicKey)
-  frPublicKey,err:= x509.ParsePKIXPublicKey(key)
-  Public:=frPublicKey.(*rsa.PublicKey)
+  // key:=[]byte(AllFriends[name].publicKey)
+  // frPublicKey,err:= x509.ParsePKIXPublicKey(key)
+  // Public:=frPublicKey.(*rsa.PublicKey)
 
-  if err != nil {
-    fmt.Println(err)
-    os.Exit(1)
-  }
+  // if err != nil {
+  //   fmt.Println(err)
+  //   os.Exit(1)
+  // }
 
 
-  ciphertext, err := rsa.EncryptOAEP(hash, rand.Reader, Public, message, label)
+  ciphertext, err := rsa.EncryptOAEP(hash, rand.Reader, AllFriends[name].publicKey, message, label)
 
   if err != nil {
     fmt.Println(err)
@@ -222,7 +317,8 @@ func main() {
   }
 
   myPublicKey := &SelfPrivateKey.PublicKey
-
+  fmt.Println("my private key",SelfPrivateKey)
+  fmt.Println("my publickey",myPublicKey)
   fmt.Print("      ---------------------------------------      \nBasic commands\n1. To quit the chat with a friend type :q\n2. To delete a friend type :delete\n      ---------------------------------------      \n ")
   var name,self_port,selfIP string
   Self = self{name:"" ,IP:"",port:"",publicKey:myPublicKey}
