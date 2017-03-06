@@ -43,11 +43,21 @@ type self struct {
 
 }
 
+type request struct {
+
+  IP string
+  port string
+  conn net.Conn
+
+}
+
 var Self self
 var SelfPrivateKey *rsa.PrivateKey
 
 var AllFriends map[string]peer
 var MyFriends map[string]peer
+var PendingRequests map[string]request
+
 
 func Options() {
 
@@ -71,13 +81,23 @@ func Listen() {
       fmt.Println(err.Error())
     }
 
+    ip, port, err := net.SplitHostPort(conn.RemoteAddr().String())
+
+    PendingRequests[ip]=request{ip,port,conn}
+
     var response string
     fmt.Println("You got a friend request!\nDo you want to accept it? (yes/no)")
     fmt.Scanf("%s",&response)
     if (response=="yes") {
+
       handleConn(conn)
 
     } else {
+
+      
+      //delete(sessions, "moo")
+      delete(PendingRequests,ip)
+
       fmt.Println("Request Declined")
     }
 
@@ -95,15 +115,16 @@ func handleConn(conn net.Conn) {
     ch<-decode(conn) 
   }()
   
-  var name string
-  name=<-ch
+  //var name string
+  <-ch
   close(ch)
   fmt.Println("Done")
 
-  chat(name)
+  
 
 }
 
+//chat(name)
 
 func encode(conn net.Conn) {
 
@@ -130,35 +151,55 @@ func decode(conn net.Conn) (string) {
 
 func chat(name string) {
 
-  var wg sync.WaitGroup
-  wg.Add(2)
-  go Read(name)
-  go Write(name)
-  wg.Wait()
+  ch1:=make(chan int)
+  ch2:=make(chan int)
+
+  go func() {
+    ch1<-Write(name)
+  }()
+  go func (){
+    ch2<-Read(name)
+  }()
+  
+  
+  <-ch1
+  <-ch2
+  close(ch1)
+  close(ch2)
+  fmt.Println("---------------------------------------\n")  
 
 
 }
 
 
-func Read(name string) {
+func Read(name string) (int) {
+
   for {
     message, _ := bufio.NewReader(AllFriends[name].connection).ReadString('\n')
     msg:=decrypt([]byte(message))
     fmt.Println("Message recieved at: ",time.Now().Format(time.RFC850))
     fmt.Print("Message Received: ", msg)
+    if(msg==":quit") {
+      return 0
+    }
   }
   
 
 
 }
 
-func Write(name string) {
+func Write(name string) (int) {
 
   for {
 
     reader := bufio.NewReader(os.Stdin)
     fmt.Print("Text to send: ")
     newmessage, _ := reader.ReadString('\n')
+    if newmessage==":quit" {
+      message:=encrypt(name,newmessage)
+      AllFriends[name].connection.Write([]byte(message + "\n"))
+      return 0
+    }
 
     words := strings.Fields(newmessage)
 
@@ -167,7 +208,7 @@ func Write(name string) {
     })
     if err != nil {
         fmt.Errorf("Error: %s", err.Error())
-        return
+        return 0
     }
 
     for _,v := range words {
@@ -244,6 +285,7 @@ func main() {
 
   AllFriends = make(map[string]peer)
   MyFriends = make(map[string]peer)
+  PendingRequests = make(map[string]request)
 
   SelfPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 
