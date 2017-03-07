@@ -148,7 +148,6 @@ func Write(ip string) (int) {
   for {
 
     reader := bufio.NewReader(os.Stdin)
-    //fmt.Print("You: ")
     newmessage, _ := reader.ReadString('\n')
     if newmessage==":quit\n" {
       AllFriends[ip].connection.Write([]byte(newmessage))
@@ -176,7 +175,6 @@ func Write(ip string) (int) {
 
     }
 
-    // fmt.Println("Msg sent at: ",time.Now().Format(time.RFC850))
     AllFriends[ip].connection.Write([]byte(newmessage))
   }
 
@@ -242,14 +240,8 @@ func main() {
   AllFriends = make(map[string]peer)
   PendingRequests=make(map[string]peer)
   
-  // fmt.Print("      ---------------------------------------      \nBasic commands\nTo quit the chat with a friend type ':quit'\n      ---------------------------------------      \n")
   var selfIP string
   Self = self{IP:""}
-
-
-
-
-
   
   go Listen()
   var i int
@@ -275,13 +267,9 @@ func main() {
     fmt.Print("--------------  --------------  --------------------  --------------------  ---------  -------------  -------------\n\n")
 
 
-// fmt.Print("--------------","  ","--------------","  ","--------------------","  ","--------------------","  ","---------","  ","-------------","  ","---------\n")
-//     fmt.Print("|1. AddFriend|","  ","|2. MyFriends|","  ","|3. Friend Requests|","  ","|4. Confirm Request|","  ","|5. Chat|","  ","|6. Unfriend|","  ","|7. Quit|\n")
-//     fmt.Print("--------------","  ","--------------","  ","--------------------","  ","--------------------","  ","---------","  ","-------------","  ","---------\n")
     for res==true {
-      fmt.Print("What's in your mind now?  ")
+    fmt.Print("What's next?  ")
 
-    // fmt.Println("Select you choice:\n1. AddFriend\n2. See your friends\n3. Show pending friend requests\n4. Accept the friend request\n5. Chat with a friend\n6. Delete a freind\n7. Quit")
     fmt.Scanf("%d",&i)
     fmt.Println()
 
@@ -318,9 +306,7 @@ func main() {
 
   }
 
-  
   fmt.Print("\nBye!\nSee you soon :)\n");
-  
   
 }
 
