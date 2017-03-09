@@ -14,13 +14,13 @@ $ export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
 
 * Import library for aspell
 ```
-go get github.com/trustmaster/go-aspell
+$ go get github.com/trustmaster/go-aspell
 ```
 
 * go run Program_name.go
 ```
 Username : IP:Port
-Friend IP : FriendIP+FriendPort
+Friend IP : FriendIP:FriendPort
 ```
 
 ## Libraries used
