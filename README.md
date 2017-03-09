@@ -18,6 +18,10 @@ go get github.com/trustmaster/go-aspell
 ```
 
 * go run Program_name.go
+```
+Username : IP:Port
+Friend IP : FriendIP+FriendPort
+```
 
 ## Libraries used
 
@@ -35,6 +39,7 @@ go get github.com/trustmaster/go-aspell
 
 * Peer to peer connection is made using tcp sockets
 * RSA algorithm is used for encryption and decryption
+* XOR cipher is used for key exchange
 
 ## Concurrency
 
